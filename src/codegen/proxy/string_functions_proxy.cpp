@@ -33,5 +33,10 @@ DEFINE_METHOD(peloton::function, StringFunctions, Trim);
 DEFINE_METHOD(peloton::function, StringFunctions, LTrim);
 DEFINE_METHOD(peloton::function, StringFunctions, RTrim);
 
+// self-defined functions
+DEFINE_METHOD(peloton::function, StringFunctions, Upper);
+DEFINE_METHOD(peloton::function, StringFunctions, Lower);
+DEFINE_METHOD(peloton::function, StringFunctions, Concat);
+
 }  // namespace codegen
 }  // namespace peloton

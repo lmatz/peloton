@@ -89,15 +89,53 @@ type::Value OldEngineStringFunctions::CharLength(
   return (type::ValueFactory::GetIntegerValue(len));
 }
 
-// Concatenate two strings
+//// Concatenate two strings
+//type::Value OldEngineStringFunctions::Concat(
+//    const std::vector<type::Value> &args) {
+//  PL_ASSERT(args.size() == 2);
+//  if (args[0].IsNull() || args[1].IsNull()) {
+//    return type::ValueFactory::GetNullValueByType(type::TypeId::VARCHAR);
+//  }
+//  std::string str = args[0].ToString() + args[1].ToString();
+//  return (type::ValueFactory::GetVarcharValue(str));
+//}
+
+// Concatenate two strings new
 type::Value OldEngineStringFunctions::Concat(
-    const std::vector<type::Value> &args) {
-  PL_ASSERT(args.size() == 2);
-  if (args[0].IsNull() || args[1].IsNull()) {
-    return type::ValueFactory::GetNullValueByType(type::TypeId::VARCHAR);
+	const std::vector<type::Value> &args) {
+  uint32_t total_len = 0;
+  std::vector<char *> strs;
+  std::vector<uint32_t> str_lens_vec;
+  for(uint32_t i = 0; i < args.size(); i++) {
+	if(args[i].IsNull()) {
+		continue;
+	}
+	strs.push_back(args.at(i).GetAs<char*>());
+	str_lens_vec.push_back(strlen(args.at(i).GetData()));
+	total_len += args[i].GetLength();
   }
-  std::string str = args[0].ToString() + args[1].ToString();
-  return (type::ValueFactory::GetVarcharValue(str));
+  
+  if (strs.size() == 0) {
+	return type::ValueFactory::GetNullValueByType(type::TypeId::VARCHAR);
+  }
+
+  executor::ExecutorContext ctx{nullptr};
+  auto *pool = ctx.GetPool();
+  LOG_DEBUG("OldEngineStringFunctions::Concat tries to allocate a buffer with size:%lu bytes", sizeof(char*) * strs.size());
+  auto concat_strs = reinterpret_cast<char **>(pool->Allocate(sizeof(char*) * strs.size()));
+  LOG_DEBUG("OldEngineStringFunctions::Concat tries to allocate a buffer with size:%lu bytes", sizeof(uint32_t) * strs.size());
+  auto str_lens = reinterpret_cast<uint32_t *>(pool->Allocate(sizeof(uint32_t) * strs.size()));
+  for(uint32_t i = 0; i < strs.size(); i++) {
+  	LOG_DEBUG("OldEngineStringFunctions::Concat tries to allocate a buffer with size:%u bytes", str_lens_vec[i]);
+	concat_strs[i] = reinterpret_cast<char *>(pool->Allocate(str_lens_vec[i]));
+	PL_MEMCPY(concat_strs[i], strs[i], str_lens_vec[i]);
+	str_lens[i] = str_lens_vec[i] + 1;
+  }
+  
+  auto ret = StringFunctions::Concat(ctx, const_cast<const char **>(concat_strs), str_lens, strs.size());
+
+  std::string str(ret.str, ret.length - 1);
+  return type::ValueFactory::GetVarcharValue(str); 
 }
 
 // Number of bytes in string
@@ -226,13 +264,33 @@ type::Value OldEngineStringFunctions::Length(
 }
 
 type::Value OldEngineStringFunctions::Upper(
-    UNUSED_ATTRIBUTE const std::vector<type::Value> &args) {
-  throw Exception{"Upper not implemented in old engine"};
+	const std::vector<type::Value> &args) {
+  PL_ASSERT(args.size() == 1);
+  if (args[0].IsNull()) {
+	return type::ValueFactory::GetNullValueByType(type::TypeId::VARCHAR);
+  }
+
+  executor::ExecutorContext ctx{nullptr};
+  auto ret = StringFunctions::Upper(ctx, args[0].GetAs<const char*>(),
+	  								args[0].GetLength());
+
+  std::string str(ret);
+  return type::ValueFactory::GetVarcharValue(str);
 }
 
 type::Value OldEngineStringFunctions::Lower(
-    UNUSED_ATTRIBUTE const std::vector<type::Value> &args) {
-  throw Exception{"Lower not implemented in old engine"};
+    const std::vector<type::Value> &args) {
+  PL_ASSERT(args.size() == 1);
+  if (args[0].IsNull()) {
+	return type::ValueFactory::GetNullValueByType(type::TypeId::VARCHAR);
+  }
+
+  executor::ExecutorContext ctx{nullptr};
+  auto ret = StringFunctions::Lower(ctx, args[0].GetAs<const char*>(),
+	  								args[0].GetLength());
+
+  std::string str(ret);
+  return type::ValueFactory::GetVarcharValue(str);
 }
 
 }  // namespace function

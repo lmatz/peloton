@@ -13,6 +13,7 @@
 #pragma once
 
 #include <cstdint>
+#include <ctype.h>
 
 namespace peloton {
 
@@ -74,6 +75,15 @@ class StringFunctions {
   // Length will return the number of characters in the given string
   static uint32_t Length(executor::ExecutorContext &ctx, const char *str,
                          uint32_t length);
+
+  // Upper will return the given string in capital letters
+  static char* Upper(executor::ExecutorContext &ctx, const char *str, const uint32_t length);
+
+  // Lower will return the given string in lower letters
+  static char* Lower(executor::ExecutorContext &ctx, const char *str, const uint32_t length);
+
+  // Concat will return the string by concating all the given string
+  static StrWithLen Concat(executor::ExecutorContext &ctx, const char **concat_strs, const uint32_t* str_lens, const uint32_t num_strs);
 };
 
 }  // namespace function

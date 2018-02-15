@@ -349,5 +349,17 @@ TEST_F(StringFunctionsTests, CodegenSubstrTest) {
   EXPECT_EQ(nullptr, res.str);
 }
 
+TEST_F(StringFunctionsTests, UpperTest) {
+
+}
+
+TEST_F(StringFunctionsTests, LowerTest) {
+
+}
+
+TEST_F(StringFunctionsTests, ConcatTest) {
+
+}
+
 }  // namespace test
 }  // namespace peloton

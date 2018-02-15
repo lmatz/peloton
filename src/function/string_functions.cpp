@@ -220,5 +220,74 @@ uint32_t StringFunctions::Length(
   return length;
 }
 
+char* StringFunctions::Upper(
+	UNUSED_ATTRIBUTE executor::ExecutorContext &ctx,
+	const char *str,
+	const uint32_t length) {
+  PL_ASSERT(str != nullptr);
+  // Allocate new memory
+  auto *pool = ctx.GetPool();
+  auto *new_str = reinterpret_cast<char *>(pool->Allocate(length));
+  uint32_t i = 0;
+  while(i != length) {
+	new_str[i] = toupper(str[i]);
+	i++;
+  }
+  return new_str;
+}
+
+char* StringFunctions::Lower(
+	UNUSED_ATTRIBUTE executor::ExecutorContext &ctx,
+	const char *str,
+	const uint32_t length) {
+  PL_ASSERT(str != nullptr);
+  // Allocate new memory
+  auto *pool = ctx.GetPool();
+  auto *new_str = reinterpret_cast<char *>(pool->Allocate(length));
+  uint32_t i = 0;
+  while(i != length) {
+	new_str[i] = tolower(str[i]);
+	i++;
+  }
+  return new_str;
+}
+
+StringFunctions::StrWithLen StringFunctions::Concat(
+	UNUSED_ATTRIBUTE executor::ExecutorContext &ctx,
+	const char **concat_strs,
+	const uint32_t *str_lens,
+	const uint32_t num_strs) {
+  // Determine the number of bytes we need
+  uint32_t total_len = 0;
+  uint32_t i = 0;
+  while(i != num_strs) {
+	// str_len includes '\0' so we need to minus that
+	total_len += (str_lens[i] <= 1) ? 0 : (str_lens[i] - 1);
+	i++;
+  }
+  // we need add 1 for '\0'
+  total_len += 1;
+
+  // Allocate new memory
+  auto *pool = ctx.GetPool();
+  LOG_DEBUG("StringFunctions::Concat tries to allocate a buffer with size:%u bytes", total_len);
+  auto *new_str = reinterpret_cast<char *>(pool->Allocate(total_len));
+
+  i = 0;
+  uint32_t k = 0;
+  while(i != num_strs) {
+	const char *str = concat_strs[i];
+	const uint32_t str_len = str_lens[i];
+	uint32_t j = 0;
+	while((str_len > 1) && j != (str_len-1)) {
+		new_str[k++] = str[j++];
+	}
+	i++;
+  }
+  new_str[total_len-1] = '\0';
+  return StringFunctions::StrWithLen(new_str, total_len);
+}
+
+
 }  // namespace function
 }  // namespace peloton
